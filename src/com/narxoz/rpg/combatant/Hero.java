@@ -1,10 +1,9 @@
 package com.narxoz.rpg.combatant;
 
+import com.narxoz.rpg.state.HeroState;
+
 /**
  * Represents a player-controlled hero participating in the tower climb.
- *
- * Students: you may extend this class as needed for your implementation.
- * You will need to add a HeroState field and related methods.
  */
 public class Hero {
 
@@ -14,12 +13,15 @@ public class Hero {
     private final int attackPower;
     private final int defense;
 
-    public Hero(String name, int hp, int attackPower, int defense) {
+    private HeroState state;
+
+    public Hero(String name, int hp, int attackPower, int defense, HeroState initialState) {
         this.name = name;
         this.hp = hp;
         this.maxHp = hp;
         this.attackPower = attackPower;
         this.defense = defense;
+        this.state = initialState;
     }
 
     public String getName()        { return name; }
@@ -29,21 +31,57 @@ public class Hero {
     public int getDefense()        { return defense; }
     public boolean isAlive()       { return hp > 0; }
 
-    /**
-     * Reduces this hero's HP by the given amount, clamped to zero.
-     *
-     * @param amount the damage to apply; must be non-negative
-     */
-    public void takeDamage(int amount) {
-        hp = Math.max(0, hp - amount);
+    public HeroState getState() {
+        return state;
+    }
+
+    public void setState(HeroState newState) {
+        System.out.println(name + " is now " + newState.getName() + "!");
+        this.state = newState;
     }
 
     /**
-     * Restores this hero's HP by the given amount, clamped to maxHp.
-     *
-     * @param amount the HP to restore; must be non-negative
+     * Attack value modified by current state
+     */
+    public int attack() {
+        return state.modifyOutgoingDamage(attackPower);
+    }
+
+    /**
+     * Reduces HP with state modifier
+     */
+    public void takeDamage(int amount) {
+        int modifiedDamage = state.modifyIncomingDamage(amount);
+        hp = Math.max(0, hp - modifiedDamage);
+        System.out.println(name + " takes " + modifiedDamage + " damage (HP: " + hp + ")");
+    }
+
+    /**
+     * Heal HP
      */
     public void heal(int amount) {
         hp = Math.min(maxHp, hp + amount);
+        System.out.println(name + " heals " + amount + " HP (HP: " + hp + ")");
+    }
+
+    /**
+     * Called at start of turn
+     */
+    public void onTurnStart() {
+        state.onTurnStart(this);
+    }
+
+    /**
+     * Called at end of turn
+     */
+    public void onTurnEnd() {
+        state.onTurnEnd(this);
+    }
+
+    /**
+     * Can hero act this turn
+     */
+    public boolean canAct() {
+        return state.canAct();
     }
 }
